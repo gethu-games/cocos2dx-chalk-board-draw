@@ -1,0 +1,112 @@
+# https://github.com/FenneX/FenneX/blob/master/.gitignore
+# Cocos2d Runtime platforms
+frameworks/runtime-src/proj.win8.1-universal
+frameworks/runtime-src/proj.win32
+frameworks/runtime-src/proj.linux
+frameworks/runtime-src/proj.android-studio
+
+#xcode specific
+###############
+build/*
+*.pbxuser
+*.mode*
+*.perspective*
+*~.nib
+!project.pbxproj
+
+
+#ignore private workspace stuff added by Xcode4
+xcuserdata
+project.xcworkspace
+
+## generic files to ignore
+##########################
+*~
+*.lock
+*.out
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*.swp
+*.swo
+
+
+# Compiled Object files
+######################
+*.slo
+*.lo
+*.obj
+
+# Compiled Static libraries
+###########################
+*.lai
+*.la
+*.a
+*.lib
+
+# Compiled source #
+###################
+*.dylib
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.so
+*.o.d
+*.out
+*.app
+
+# Packages #
+############
+# it's better to unpack these files and commit the raw source
+# git has its own built in compression methods
+*.7z
+*.dmg
+*.gz
+*.iso
+*.rar
+*.tar
+*.zip
+
+# Logs and databases #
+######################
+*.log
+*.sql
+*.sqlite
+
+#.LSOverride#
+
+# Generated files in the Android project #
+##########################################
+proj.android/libs/armeabi/*
+proj.android/libs/armeabi-v7a/*
+proj.android/libs/x86/*
+proj.android/obj/*
+
+proj.android/build/
+proj.android/gen/*
+proj.android/bin/*
+proj.android/assets/*
+
+proj.android/.gradle/*
+proj.android/.idea/*
+proj.android/*.iml
+proj.android/local.properties
+
+proj.android/libraries/*/build/
+proj.android/libraries/*/gen/*
+proj.android/libraries/*/bin/*
+proj.android/libraries/*/.idea/*
+proj.android/libraries/*/*.iml
+proj.android/libraries/*/local.properties
+
+*.apk
+
+# Generated documentation, it can be regenerated using doxygen #
+######################
+docs/html/*
