@@ -1,3 +1,4 @@
+var Config                      =   {};
 
 var Board = cc.Scene.extend({
 
@@ -10,6 +11,12 @@ var Board = cc.Scene.extend({
     chalkBrush                  :   null,
 
     prevPoint                   :   cc.p(0, 0),
+
+    boardSpace                  :   null,
+
+    cellSize                    :   null,
+
+    offset                      :   null,
 
     mode                        :   0,
 
@@ -34,6 +41,15 @@ var Board = cc.Scene.extend({
             console.log('No Touch Capabs');
         }
 
+        Config.colCount         =   5;
+        Config.rowCount         =   5;
+        Config.drawSpeed        =   10;
+        Config.lineColor        =   cc.color(250, 250, 50, 200);
+
+        this.boardSpace         =   cc.size(size.width * 0.75, size.width * 0.75);
+        this.cellSize           =   cc.size(this.boardSpace.width / Config.colCount, this.boardSpace.height / Config.rowCount);
+        this.offset             =   cc.p(size.width * 0.12, size.height * 0.12);
+
         this.boardSprite        =   cc.Sprite.create(res.Board_BG);
         this.boardSprite.setPosition(cc.p(size.width / 2, size.height / 2));
         this.boardSprite.setScale(640 / this.boardSprite.getContentSize().width,
@@ -53,6 +69,8 @@ var Board = cc.Scene.extend({
         this.duster.setScale(0.5);
         this.duster.setRotation(30);
         this.addChild(this.duster, 2);
+
+        this.drawBoard();
     }, 
 
     onTouchesBegan:function(touches, event) {
@@ -62,13 +80,6 @@ var Board = cc.Scene.extend({
         
         slf.prevPoint           =   pos;
         slf.mode                =   0;
-
-        /*
-        var dist                =   Math.round(cc.pDistance(pos, slf.chalkSprite.getPosition()));
-        if (dist < slf.chalkSprite.getContentSize().width) {
-            slf.mode            =   0;
-        }
-        */
 
         dist                    =   Math.round(cc.pDistance(pos, slf.duster.getPosition()));
         if (dist < slf.duster.getContentSize().width) {
@@ -90,7 +101,7 @@ var Board = cc.Scene.extend({
         for (var i = 0; i < dist; i += 5) {
             var cPos            =   cc.pLerp(slf.prevPoint, pos, i/dist);
             if (slf.mode == 0) {
-                slf.drawBrushAtPoint(cPos, cc.color(240, 240, 240, 230));
+                slf.drawBrushAtPoint(cPos, cc.color(240, 240, 240, 230), 1, true);
             } else if (slf.mode == 1) {
                 slf.eraseAtPoint(cPos);
             }
@@ -111,19 +122,24 @@ var Board = cc.Scene.extend({
         } else if (slf.mode == 1) {
             slf.duster.runAction(cc.moveTo(0.2, cc.p(slf.duster.getContentSize().width * 0.5, slf.duster.getContentSize().height * 0.8)).easing(cc.easeIn(1.0)));
         }
-                //this.duster.runAction(cc.moveTo(0.1, this.erasePoint).easing(cc.easeIn(1.0)));
 
     },
 
-    drawBrushAtPoint            :   function(pt, color) {
+    drawBrushAtPoint            :   function(pt, color, density, vertical) {
 
         this.renderTex.begin();
-        this.chalkBrush         =   cc.Sprite.create(res.chalkBrush_png);
-        this.chalkBrush.setRotation(Math.random() * 180);
-        this.chalkBrush.setPosition(pt);
-        this.chalkBrush.setColor(color);
-        this.chalkBrush.setScale(1.5);
-        this.chalkBrush.visit();
+        for (var i = 0; i < density; i++) {
+            this.chalkBrush     =   cc.Sprite.create(res.chalkBrush_png);
+            this.chalkBrush.setRotation(Math.random() * 180);
+            if (vertical) {
+                this.chalkBrush.setPosition(cc.p(pt.x, pt.y + 5 * (i - density * 0.5)));
+            } else {
+                this.chalkBrush.setPosition(cc.p(pt.x + 5 * (i - density * 0.5), pt.y));
+            }
+            this.chalkBrush.setColor(color);
+            this.chalkBrush.setScale(1.5);
+            this.chalkBrush.visit();
+        }
         this.renderTex.end();
 
         this.chalkSprite.setPosition(cc.p(pt.x - this.chalkSprite.getContentSize().width * 0.3,
@@ -145,6 +161,54 @@ var Board = cc.Scene.extend({
 
         this.duster.setPosition(pt);
 
+    },
+
+    drawBoard                   :   function(dt) {
+
+        this.vLineIndex         =   0;
+        this.hLineIndex         =   -1;
+        this.currentLinePercent =   1.025;
+
+        this.schedule(this.updateVGridDraw, 0);
+    },
+
+    updateVGridDraw              :   function(dt) {
+
+        this.currentLinePercent         -=  0.01 * Config.drawSpeed;
+        if (this.currentLinePercent < 0.08) 
+            this.currentLinePercent = 0.079;
+        to                  =   cc.p(this.vLineIndex * this.cellSize.width + this.offset.x, this.currentLinePercent * this.boardSpace.height + this.offset.y);
+        this.drawBrushAtPoint(to, Config.lineColor, 16, true);
+
+        if (this.currentLinePercent < 0.08) {
+            this.vLineIndex++;
+            if (this.vLineIndex <= Config.colCount) {
+                this.currentLinePercent = 1.025;
+            } else {
+                this.vLineIndex         =   -1;
+                this.hLineIndex         =   Config.rowCount;
+                this.currentLinePercent =   -0.01;
+                this.unschedule(this.updateVGridDraw);
+                this.schedule(this.updateHGridDraw, 0);
+            }
+        }
+    },
+
+    updateHGridDraw              :   function(dt) {
+        this.currentLinePercent         +=  0.01 * Config.drawSpeed;
+        if (this.currentLinePercent > 0.93)
+            this.currentLinePercent     =   0.931;
+        to                  =   cc.p(this.currentLinePercent * this.boardSpace.width + this.offset.x, this.hLineIndex * this.cellSize.height + this.offset.y);
+        this.drawBrushAtPoint(to, Config.lineColor, 16, false);
+
+        if (this.currentLinePercent > 0.93) {
+            this.hLineIndex--;
+            if (this.hLineIndex != -1) {
+                this.currentLinePercent =   -0.01;
+            } else {
+                this.unschedule(this.updateHGridDraw);
+            }
+        }
     }
 
 
