@@ -27,6 +27,7 @@ var Board = cc.Scene.extend({
         var slf                 =   this;
         var size                =   cc.winSize;
         
+        // Initialize Touch handlets
         if( 'touches' in cc.sys.capabilities ) { 
             console.log('Can Touch');
             this._touchListener = cc.EventListener.create({
@@ -41,15 +42,18 @@ var Board = cc.Scene.extend({
             console.log('No Touch Capabs');
         }
 
+        // Grid Configuration 
         Config.colCount         =   5;
         Config.rowCount         =   5;
         Config.drawSpeed        =   10;
         Config.lineColor        =   cc.color(250, 250, 50, 200);
 
+        // Initializing Grid Drawing parameters
         this.boardSpace         =   cc.size(size.width * 0.75, size.width * 0.75);
         this.cellSize           =   cc.size(this.boardSpace.width / Config.colCount, this.boardSpace.height / Config.rowCount);
         this.offset             =   cc.p(size.width * 0.12, size.height * 0.12);
 
+        // Adding Sprites - Begin
         this.boardSprite        =   cc.Sprite.create(res.Board_BG);
         this.boardSprite.setPosition(cc.p(size.width / 2, size.height / 2));
         this.boardSprite.setScale(640 / this.boardSprite.getContentSize().width,
@@ -69,9 +73,26 @@ var Board = cc.Scene.extend({
         this.duster.setScale(0.5);
         this.duster.setRotation(30);
         this.addChild(this.duster, 2);
+        // Adding Sprites - End
+
+        this.createMenu();
 
         this.drawBoard();
     }, 
+
+    createMenu                  :   function() {
+
+        var size                =   cc.winSize;
+
+        var drawMenuItemImage   =   cc.MenuItemFont.create('Draw Grid');
+        var drawMenuItem        =   cc.MenuItemToggle.create(drawMenuItemImage, this.drawMenuItemTapped, this);
+        drawMenuItem.setPosition(cc.p(size.width * 0.5, size.height * 0.75));
+
+        this.menu               =   cc.Menu.create(drawMenuItem);
+        this.menu.setPosition(cc.p(0, 0));
+        this.addChild(this.menu);
+
+    },
 
     onTouchesBegan:function(touches, event) {
         var slf                 =   event.getCurrentTarget();
@@ -84,6 +105,10 @@ var Board = cc.Scene.extend({
         dist                    =   Math.round(cc.pDistance(pos, slf.duster.getPosition()));
         if (dist < slf.duster.getContentSize().width) {
             slf.mode            =   1;
+            slf.renderTex.begin();
+            slf.menu.visit();
+            slf.renderTex.end();
+            slf.menu.removeFromParent(true);
         }
 
         return                      true;
@@ -121,6 +146,7 @@ var Board = cc.Scene.extend({
             slf.chalkSprite.runAction(cc.moveTo(0.2, cc.p(size.width * 0.7, slf.chalkSprite.getContentSize().height * 0.8)).easing(cc.easeIn(1.0)));
         } else if (slf.mode == 1) {
             slf.duster.runAction(cc.moveTo(0.2, cc.p(slf.duster.getContentSize().width * 0.5, slf.duster.getContentSize().height * 0.8)).easing(cc.easeIn(1.0)));
+            slf.createMenu();
         }
 
     },
@@ -166,24 +192,36 @@ var Board = cc.Scene.extend({
     drawBoard                   :   function(dt) {
 
         this.vLineIndex         =   0;
-        this.hLineIndex         =   -1;
-        this.currentLinePercent =   1.025;
+        //this.hLineIndex         =   -1;
+        //this.currentLinePercent =   1.025;
 
-        this.schedule(this.updateVGridDraw, 0);
+        //this.schedule(this.updateVGridDraw, 0);
+        this.currentLinePercent =   1.0;
+        this.schedule(this.updateVGridDraw);
+    },
+
+    updateDrawLine              :   function(dt) {
+
+        this.currentLinePercent         -=  0.02;
+        to                  =   cc.p(cc.winSize.width * 0.5, this.currentLinePercent * cc.winSize.height);
+        this.drawBrushAtPoint(to, cc.color(250, 250, 50, 200), 16);
+
+        if (this.currentLinePercent < 0.0) {
+            this.unschedule(this.updateDrawLine);
+        }
+
     },
 
     updateVGridDraw              :   function(dt) {
 
         this.currentLinePercent         -=  0.01 * Config.drawSpeed;
-        if (this.currentLinePercent < 0.08) 
-            this.currentLinePercent = 0.079;
         to                  =   cc.p(this.vLineIndex * this.cellSize.width + this.offset.x, this.currentLinePercent * this.boardSpace.height + this.offset.y);
         this.drawBrushAtPoint(to, Config.lineColor, 16, true);
 
-        if (this.currentLinePercent < 0.08) {
+        if (this.currentLinePercent < 0.01) {
             this.vLineIndex++;
             if (this.vLineIndex <= Config.colCount) {
-                this.currentLinePercent = 1.025;
+                this.currentLinePercent = 1.0;
             } else {
                 this.vLineIndex         =   -1;
                 this.hLineIndex         =   Config.rowCount;
@@ -209,6 +247,10 @@ var Board = cc.Scene.extend({
                 this.unschedule(this.updateHGridDraw);
             }
         }
+    },
+
+    drawMenuItemTapped          :   function() {
+        this.drawBoard();
     }
 
 
